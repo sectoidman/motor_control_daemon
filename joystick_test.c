@@ -53,12 +53,15 @@ void pwm_enable(bool enable) {
 
 void drive_enable(bool enable)
 {
-    struct gpiod_line *enable_line;
+    struct gpiod_line *enable_line = gpiod_chip_get_line(chip, GPIO_ENABLE_PIN);
     int motor_enable = enable ? 1 : 0;
-    enable_line = gpiod_chip_get_line(chip, GPIO_ENABLE_PIN);
-    if (gpiod_line_request_output(enable_line, "motor_control", motor_enable) < 0) {
-        perror("Failed to request enable line");
-        exit(1);
+#if defined(DEBUG)
+    printf("Drive enable: %d\n", motor_enable);
+#endif
+    if (gpiod_line_set_value(enable_line, motor_enable) < 0)
+    {
+	    perror("drive enable set failed");
+	    exit(1);
     }
 }
 
@@ -130,22 +133,41 @@ void setup_gpio(struct gpiod_chip *chip) {
 
 void teardown_gpio()
 {
-    struct gpiod_line *enable_line = gpiod_chip_get_line(chip, GPIO_ENABLE_PIN);
-    gpiod_line_request_output(enable_line, "motor_control", 0);
-
-    // Close the GPIO chip before exiting
-    gpiod_chip_close(chip);
+   drive_enable(false);
+   // Close the GPIO chip before exiting
+   gpiod_chip_close(chip);
+   exit(0); 
 }
+
+void register_signal_handlers()
+{
+    static struct sigaction siga;
+    siga.sa_handler = teardown_gpio;
+    for (int sig = 1; sig <= SIGRTMAX; ++sig) {
+        // this might return -1 and set errno, but we don't care
+        sigaction(sig, &siga, NULL);
+    }
+}
+
 
 int get_speed(int js_fd)
 {
     struct js_event e;
-    int x_axis = 0;
-    while (read(js_fd, &e, sizeof(e)) > 0) {
-        if ((e.type & ~JS_EVENT_INIT) == JS_EVENT_AXIS && e.number == 0) {
-            x_axis = e.value; // X-axis of left stick
-        }
-    }
+    static int x_axis = 0; // static so we persist the last value
+    static bool drive_state = false;
+
+     while (read(js_fd, &e, sizeof(e)) > 0) {
+         if ((e.type & ~JS_EVENT_INIT) == JS_EVENT_AXIS && e.number == 0) {
+             x_axis = e.value; // X-axis of left stick
+         }
+       if ((e.type & ~JS_EVENT_INIT) == JS_EVENT_BUTTON && e.number == 1 && e.value == 1)
+       {
+               // O button pressed
+               // toggle the drive enable.
+               drive_state = !drive_state;
+               drive_enable(drive_state);
+       }
+     }
 
     // exponential smoothing low-pass filter
     static const double alpha = 0.2;
@@ -157,6 +179,9 @@ int get_speed(int js_fd)
     if (fabs(x_axis_smoothed) > JOYSTICK_DEADBAND)
     {
         x_axis_normal = x_axis_smoothed / JOYSTICK_AXIS_MAX;
+#if defined(DEBUG)
+       printf("Joystick: %.3f\n", x_axis_normal);
+#endif
     }
 
     return (int)(x_axis_normal * MAX_RPM);
@@ -186,16 +211,6 @@ void control_motor(int speed) {
     }
 }
 
-void register_signal_handlers()
-{
-    static struct sigaction siga;
-    siga.sa_handler = teardown_gpio;
-    for (int sig = 1; sig <= SIGRTMAX; ++sig) {
-        // this might return -1 and set errno, but we don't care
-        sigaction(sig, &siga, NULL);
-    }
-}
-
 void timespec_add_ns(struct timespec *t, long ns) {
     t->tv_nsec += ns;
     while (t->tv_nsec >= 1000000000L) {
@@ -220,9 +235,6 @@ int main() {
         return 1;
     }
 
-    // set up handlers for exit
-    register_signal_handlers();
-
     // configure controller
     int js_fd = open("/dev/input/js0", O_RDONLY | O_NONBLOCK);
     if (js_fd < 0) {
@@ -236,6 +248,8 @@ int main() {
     // Set up GPIO and PWM
     setup_gpio(chip);
     setup_pwm();
+
+    register_signal_handlers();
 
     // Command loop
     int speed = 0;
@@ -254,9 +268,6 @@ int main() {
             perror("clock_nanosleep");
         }
     }
-
-    // Close the GPIO chip before exiting
-    gpiod_chip_close(chip);
 
     return 0;
 }
