@@ -16,10 +16,10 @@
 #define GPIO_ENABLE_PIN 26 // Enable GPIO pin
 
 // Stepper motor parameters
-#define STEPS_PER_REV 800  // Steps per full revolution
-#define PWM_DUTY_CYCLE 50000
+#define STEPS_PER_REV 6400  // Steps per full revolution
+#define PWM_DUTY_CYCLE 5000 // min pulse width for TB6600 is ~2us?
 #define INITIAL_PWM_PERIOD 1000000000
-#define MAX_RPM 1000.0
+#define MAX_RPM 20.0
 
 // timestep
 #define PERIOD_NS 10000000L // 10 ms
@@ -32,9 +32,7 @@ struct gpiod_chip *chip = NULL;
 
 void pwm_enable(bool enable) {
 	// Enable PWM signal
-	char pwm_enable_path[256];
-	snprintf(pwm_enable_path, sizeof(pwm_enable_path), "/sys/class/pwm/pwmchip0/pwm1/enable");
-	FILE *pwm_enable_file = fopen(pwm_enable_path, "w");
+	FILE *pwm_enable_file = fopen("/sys/class/pwm/pwmchip0/pwm1/enable", "w");
 	if (pwm_enable_file == NULL) {
 	    perror("Failed to enable PWM");
 	    exit(1);
@@ -54,7 +52,7 @@ void pwm_enable(bool enable) {
 void drive_enable(bool enable)
 {
     struct gpiod_line *enable_line = gpiod_chip_get_line(chip, GPIO_ENABLE_PIN);
-    int motor_enable = enable ? 1 : 0;
+    int motor_enable = enable ? 0 : 1; // active low
 #if defined(DEBUG)
     printf("Drive enable: %d\n", motor_enable);
 #endif
@@ -67,9 +65,7 @@ void drive_enable(bool enable)
 
 void set_pwm_period(int period)
 {
-    char pwm_period_path[256];
-    snprintf(pwm_period_path, sizeof(pwm_period_path), "/sys/class/pwm/pwmchip0/pwm1/period");
-    FILE *pwm_period_file = fopen(pwm_period_path, "w");
+    FILE *pwm_period_file = fopen("/sys/class/pwm/pwmchip0/pwm1/period", "w");
     if (pwm_period_file == NULL) {
         perror("Failed to set PWM period");
         exit(1);
@@ -93,9 +89,7 @@ void setup_pwm() {
     pwm_enable(false);
 
     // Set PWM duty cycle
-    char pwm_dc_path[256];
-    snprintf(pwm_dc_path, sizeof(pwm_dc_path), "/sys/class/pwm/pwmchip0/pwm1/duty_cycle");
-    FILE *pwm_dc_file = fopen(pwm_dc_path, "w");
+    FILE *pwm_dc_file = fopen("/sys/class/pwm/pwmchip0/pwm1/duty_cycle", "w");
     if (pwm_dc_file == NULL) {
         perror("Failed to set PWM duty cycle");
         exit(1);
