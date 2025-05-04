@@ -128,10 +128,10 @@ void setup_gpio(struct gpiod_chip *chip) {
 
 void teardown_gpio()
 {
-   drive_enable(false);
-   // Close the GPIO chip before exiting
-   gpiod_chip_close(chip);
-   exit(0); 
+    drive_enable(false);
+    // Close the GPIO chip before exiting
+    gpiod_chip_close(chip);
+    exit(0);
 }
 
 void register_signal_handlers()
@@ -151,18 +151,21 @@ int get_speed(int js_fd)
     static int x_axis = 0; // static so we persist the last value
     static bool drive_state = false;
 
-     while (read(js_fd, &e, sizeof(e)) > 0) {
-         if ((e.type & ~JS_EVENT_INIT) == JS_EVENT_AXIS && e.number == 0) {
-             x_axis = e.value; // X-axis of left stick
-         }
-       if ((e.type & ~JS_EVENT_INIT) == JS_EVENT_BUTTON && e.number == 1 && e.value == 1)
-       {
-               // O button pressed
-               // toggle the drive enable.
-               drive_state = !drive_state;
-               drive_enable(drive_state);
-       }
-     }
+    while (read(js_fd, &e, sizeof(e)) > 0)
+    {
+        if ((e.type & ~JS_EVENT_INIT) == JS_EVENT_AXIS && e.number == 0)
+        {
+            x_axis = e.value; // X-axis of left stick
+        }
+
+        if ((e.type & ~JS_EVENT_INIT) == JS_EVENT_BUTTON && e.number == 1 && e.value == 1)
+        {
+            // O button pressed
+            // toggle the drive enable.
+            drive_state = !drive_state;
+            drive_enable(drive_state);
+        }
+    }
 
     // exponential smoothing low-pass filter
     static const double alpha = 0.2;
@@ -175,7 +178,7 @@ int get_speed(int js_fd)
     {
         x_axis_normal = x_axis_smoothed / JOYSTICK_AXIS_MAX;
 #if defined(DEBUG)
-       printf("Joystick: %.3f\n", x_axis_normal);
+        printf("Joystick: %.3f\n", x_axis_normal);
 #endif
     }
 
@@ -194,7 +197,7 @@ void control_motor(int speed) {
     if (speed < 0) {
         set_pwm_period(pwm_period);
         gpiod_line_set_value(dir_line, 1); // Counter-clockwise (high)
-    pwm_enable(true);
+        pwm_enable(true);
     } else if (speed > 0) {
         set_pwm_period(pwm_period);
         gpiod_line_set_value(dir_line, 0); // Clockwise (low)
@@ -202,7 +205,7 @@ void control_motor(int speed) {
     }
     else // 0
     {
-    pwm_enable(false);
+        pwm_enable(false);
     }
 }
 
@@ -249,8 +252,8 @@ int main() {
     // Command loop
     int speed = 0;
     while (1) {
-    // get speed and do motor control
-    speed = get_speed(js_fd);
+        // get speed and do motor control
+        speed = get_speed(js_fd);
         control_motor(speed);
 
         // Schedule next activation time
