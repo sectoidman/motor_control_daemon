@@ -30,23 +30,24 @@
 
 struct gpiod_chip *chip = NULL;
 
-void pwm_enable(bool enable) {
-	// Enable PWM signal
-	FILE *pwm_enable_file = fopen("/sys/class/pwm/pwmchip0/pwm1/enable", "w");
-	if (pwm_enable_file == NULL) {
-	    perror("Failed to enable PWM");
-	    exit(1);
-	}
+void pwm_enable(bool enable)
+{
+    // Enable PWM signal
+    FILE *pwm_enable_file = fopen("/sys/class/pwm/pwmchip0/pwm1/enable", "w");
+    if (pwm_enable_file == NULL) {
+        perror("Failed to enable PWM");
+        exit(1);
+    }
 
-	if (enable)
-	{
-		fprintf(pwm_enable_file, "1");
-	}
-	else
-	{
-		fprintf(pwm_enable_file, "0");
-	}
-	fclose(pwm_enable_file);
+    if (enable)
+    {
+        fprintf(pwm_enable_file, "1");
+    }
+    else
+    {
+        fprintf(pwm_enable_file, "0");
+    }
+    fclose(pwm_enable_file);
 }
 
 void drive_enable(bool enable)
@@ -58,8 +59,8 @@ void drive_enable(bool enable)
 #endif
     if (gpiod_line_set_value(enable_line, motor_enable) < 0)
     {
-	    perror("drive enable set failed");
-	    exit(1);
+        perror("drive enable set failed");
+        exit(1);
     }
 }
 
@@ -193,7 +194,7 @@ void control_motor(int speed) {
     if (speed < 0) {
         set_pwm_period(pwm_period);
         gpiod_line_set_value(dir_line, 1); // Counter-clockwise (high)
-	pwm_enable(true);
+    pwm_enable(true);
     } else if (speed > 0) {
         set_pwm_period(pwm_period);
         gpiod_line_set_value(dir_line, 0); // Clockwise (low)
@@ -201,7 +202,7 @@ void control_motor(int speed) {
     }
     else // 0
     {
-	pwm_enable(false);
+    pwm_enable(false);
     }
 }
 
@@ -232,8 +233,8 @@ int main() {
     // configure controller
     int js_fd = open("/dev/input/js0", O_RDONLY | O_NONBLOCK);
     if (js_fd < 0) {
-	    perror("Could not open joystick");
-	    exit(1);
+        perror("Could not open joystick");
+        exit(1);
     }
 
     struct timespec next;
@@ -248,8 +249,8 @@ int main() {
     // Command loop
     int speed = 0;
     while (1) {
-	// get speed and do motor control
-	speed = get_speed(js_fd);
+    // get speed and do motor control
+    speed = get_speed(js_fd);
         control_motor(speed);
 
         // Schedule next activation time
