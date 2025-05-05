@@ -1,6 +1,6 @@
 # vim: filetype=make
 
-BINARY = motor_control
+BINARY = turret_control
 SOURCES = motor_control.c
 
 all:
