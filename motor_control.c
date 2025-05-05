@@ -15,6 +15,10 @@
 #define GPIO_PWM_PIN 19   // PWM GPIO pin
 #define GPIO_ENABLE_PIN 26 // Enable GPIO pin
 
+// fire-control outputs
+#define GPIO_SPINUP_PIN 3
+#define GPIO_FEED_PIN 4
+
 // Stepper motor parameters
 #define STEPS_PER_REV 6400  // Steps per full revolution
 #define PWM_DUTY_CYCLE 5000 // min pulse width for TB6600 is ~2us?
@@ -145,7 +149,7 @@ void register_signal_handlers()
 }
 
 
-int get_speed(int js_fd)
+int get_speed_joystick(int js_fd)
 {
     struct js_event e;
     static int x_axis = 0; // static so we persist the last value
@@ -253,7 +257,7 @@ int main() {
     int speed = 0;
     while (1) {
         // get speed and do motor control
-        speed = get_speed(js_fd);
+        speed = get_speed_joystick(js_fd);
         control_motor(speed);
 
         // Schedule next activation time
