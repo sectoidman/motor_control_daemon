@@ -21,7 +21,7 @@
 #define GPIO_FEED_PIN 4
 
 // fire-control timing
-#define SPINUP_TIME_NS 400000000 // 100 ms
+#define SPINUP_TIME_NS 400000000 // 400 ms
 
 // Stepper motor parameters
 #define STEPS_PER_REV 6400  // Steps per full revolution
