@@ -20,6 +20,11 @@
 #define GPIO_SPINUP_PIN 3
 #define GPIO_FEED_PIN 4
 
+// input GPIOs
+#define GPIO_FC_MON 17 // active low - when active, power supplied to firing relays
+#define GPIO_SW1 6
+#define GPIO_SW2 5
+
 // fire-control timing
 #define SPINUP_TIME_NS 400000000 // 400 ms
 
