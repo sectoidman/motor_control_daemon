@@ -287,6 +287,10 @@ void get_gamepad_commands(int js_fd, gamepad_data* outputs)
     printf("Joystick X-axis: %.3f\n", outputs->joystick_x_axis_normal);
 #endif
     }
+    else
+    {
+        outputs->joystick_x_axis_normal = 0.0;
+    }
 }
 
 
